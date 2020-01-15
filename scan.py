@@ -2,6 +2,7 @@
 import argparse
 from collections import defaultdict
 from itertools import chain
+import logging
 from pathlib import Path
 import sys
 
@@ -10,6 +11,8 @@ import bedrock.leveldb
 DEFAULT_MAX_DIST = 20
 #WORLD_PATH = Path('~/minecraft/worlds/The Cameron World II (577830886)')
 DEFAULT_WORLD_PATH = Path('worlds/The Cameron World II (577830886)')
+
+logger: logging.Logger = None
 
 Y_MIN = 1
 Y_MAX = 60
@@ -145,6 +148,17 @@ OPTIONAL_BLOCKS = {
 	'redstone': 'minecraft:redstone_ore',
 }
 
+def init_logger(log_level: int) -> logging.Logger:
+	levels = {
+		0: logging.WARNING,
+		1: logging.INFO,
+		2: logging.DEBUG
+	}
+	level = levels[min(len(levels), log_level)]
+	logging.basicConfig(level=level, format='%(levelname)-8s %(message)s')
+	logger = logging.getLogger('mc-scan')
+	return logger
+
 
 def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 	center_x, center_y, center_z = center
@@ -181,7 +195,7 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 
 	with bedrock.World(world_path) as world:
 		for dist in range(0, max_dist+1):
-			print(dist)
+			logger.info(f'Dist {dist}')
 			if dist == 0:
 				coords = ((center_x, center_z), )
 			else:
@@ -213,7 +227,7 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 					else:
 						print(name, dv)
 						if block.nbt is not None:
-							print(x, y, z, block.name, block.nbt)
+							logger.error(x, y, z, block.name, block.nbt)
 #							raise Exception(f'Found an NBT at {x},{y},{z}')
 	return found_grouped, found_with_dist
 
@@ -237,6 +251,7 @@ def parse():
 	parser.add_argument('--ymax', type=int, default=Y_MAX)
 	parser.add_argument('--dist', type=int, default=DEFAULT_MAX_DIST)
 	parser.add_argument('--world', type=str, default=DEFAULT_WORLD_PATH)
+	parser.add_argument('--verbose', '-v', action='count', default=0, dest='log_level')
 	for opt in OPTIONAL_BLOCKS:
 		parser.add_argument(f'--{opt}', default=False, action='store_true')
 	opts = parser.parse_args(sys.argv[1:])
@@ -244,6 +259,8 @@ def parse():
 
 def run():
 	opts = parse()
+	global logger
+	logger = init_logger(opts.log_level)
 	found_grouped, found_with_dist = scan(
 		(opts.center_x, opts.center_y, opts.center_z),
 		(opts.ymin, opts.ymax),
