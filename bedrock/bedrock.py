@@ -70,7 +70,7 @@ class Chunk:
       try:
         self.subchunks.append(SubChunk(db, self.x, self.z, i)) #Pass off processing to the subchunk class
       #Supposedly if a subchunk exists then all the subchunks below it exist. This is not the case.
-      except KeyError:
+      except NotFoundError:
         self.subchunks.append(None)
 
     self._loadTileEntities(db)
@@ -106,7 +106,11 @@ class Chunk:
       x = nbtData.pop("x").payload # We add back theses with the correct value on save, they are important.
       y = nbtData.pop("y").payload
       z = nbtData.pop("z").payload
-      self.getBlock(x % 16, y, z % 16).nbt = nbtData
+      block = self.getBlock(x % 16, y, z % 16)
+      if not block:
+        print("Warning: Cannot apply nbt to block at {} {} {} since it does not exist.".format(x, y, z))
+        continue
+      block.nbt = nbtData
 
   def _loadEntities(self, db):
     try:
@@ -143,7 +147,9 @@ class Chunk:
     self._saveEntities(db)
 
   def _save2D(self, db):
-    pass
+    data = struct.pack("<" + "H" * 16 * 16, *self.hMap)
+    data += struct.pack("B" * 16 * 16, *self.biomes)
+    ldb.put(db, self.keyBase + b'-', data)
 
   def _saveTileEntities(self, db):
     data = nbt.DataWriter()
@@ -180,7 +186,10 @@ class SubChunk:
     if db is not None: # For creating subchunks, there will be no DB.
       # Subchunks are stored as base key + subchunk key `/` + subchunk id (y level // 16)
       key = struct.pack("<iicB", x, z, b'/', y)
-      data = ldb.get(db, key)
+      try:
+        data = ldb.get(db, key)
+      except KeyError:
+        raise NotFoundError("Subchunk at {} {}/{} not found.".format(x, z, y))
       self.version, data = data[0], data[1:]
       if self.version != 8:
         raise NotImplementedError("Unsupported subchunk version {} at {} {}/{}".format(self.version, x, z, y))
@@ -194,8 +203,12 @@ class SubChunk:
         self.blocks.append(np.empty(4096, dtype=Block)) # Prepare with correct dtype
         for j, block in enumerate(blocks):
           block = palette[block]
-          self.blocks[i][j] = Block(block["name"].payload, block["val"].payload) # .payload to get actual val
-
+          try: # 1.13 format
+            #if block["version"].payload != 17629200:
+            #  raise NotImplementedError("Unexpected block version {}".format(block["version"].payload))
+            self.blocks[i][j] = Block(block["name"].payload, block["states"].payload) # .payload to get actual val
+          except KeyError: # 1.12 format
+            self.blocks[i][j] = Block(block["name"].payload, block["val"].payload) # .payload to get actual val
         self.blocks[i] = self.blocks[i].reshape(16, 16, 16).swapaxes(1, 2) # Y and Z saved in an inverted order
 
   # These arent actual blocks, just ids pointing to the palette.
@@ -221,7 +234,8 @@ class SubChunk:
     dr = nbt.DataReader(data)
     palette = []
     for _ in range(palletLen):
-      palette.append(nbt.decode(dr))
+      block = nbt.decode(dr)
+      palette.append(block)
     return palette, data[dr.idx:]
 
   def getBlock(self, x, y, z, layer=0):
@@ -237,7 +251,7 @@ class SubChunk:
 
   def save(self, db, force=False):
     if self.dirty or force:
-      data = struct.pack("<BB", self.version, 1)
+      data = struct.pack("<BB", self.version, len(self.blocks))
       for i in range(len(self.blocks)):
         palette, blockIDs = self._savePalette(i)
         data += self._saveBlocks(len(palette), blockIDs)
@@ -278,9 +292,16 @@ class SubChunk:
     mapping = {}
     for i, block in enumerate(blocks):
       # Generate the palette nbt for the given block
-      short = (block.name, block.dv)
+      short = (block.name, str(block.properties))
       if short not in mapping:
-        palette.append(nbt.TAG_Compound("", [nbt.TAG_String("name", block.name), nbt.TAG_Short("val", block.dv)]))
+        if isinstance(block.properties, int): # 1.12
+          palette.append(nbt.TAG_Compound("", [nbt.TAG_String("name", block.name), nbt.TAG_Short("val", block.properties)]))
+        else: # 1.13
+          palette.append(nbt.TAG_Compound("", [
+            nbt.TAG_String("name", block.name),
+            nbt.TAG_Compound("states", block.properties),
+            nbt.TAG_Int("version", 17629200)
+          ]))
         mapping[short] = len(palette) - 1
       blockIDs[i] = mapping[short]
     return palette, blockIDs
@@ -294,14 +315,14 @@ class SubChunk:
 
 # Generic block storage.
 class Block:
-  __slots__ = ["name", "dv", "nbt"]
-  def __init__(self, name, dv=0, nbtData=None):
+  __slots__ = ["name", "properties", "nbt"]
+  def __init__(self, name, properties=None, nbtData=None):
     self.name = name
-    self.dv = dv
+    self.properties = properties or []
     self.nbt = nbtData
 
   def __repr__(self):
-    return "{} {}".format(self.name, self.dv)
+    return "{} {}".format(self.name, self.properties)
 
 # Handles NBT generation for command blocks.
 class CommandBlock(Block):
@@ -336,3 +357,6 @@ class CommandBlock(Block):
     nbtData.add(nbt.TAG_Int("SuccessCount", 0))
     nbtData.add(nbt.TAG_Byte("TrackOutput", 1))
     super().__init__(name, dv, nbtData)
+
+class NotFoundError(Exception):
+  pass
