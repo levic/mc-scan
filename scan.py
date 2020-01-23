@@ -66,63 +66,112 @@ INTERESTING = set([
 	'minecraft:diamond_ore',
 	'minecraft:gold_ore',
 	'minecraft:lapis_ore',
+	'minecraft:mob_spawner',
 
 	'minecraft:brewing_stand',
 	'minecraft:cartography_table',
 	'minecraft:cauldron',
 	'minecraft:wall_banner',
+
+	'minecraft:portal',
 ])
 
+OPTIONAL_BLOCKS = {
+	'books': (
+		'minecraft:bookshelf',
+	),
+	'clay': (
+		'minecraft:clay',
+		'minecraft:hardened_clay',
+		'minecraft:stained_hardened_clay',
+	),
+	'coal': 'minecraft:coal_ore',
+	'iron': 'minecraft:iron_ore',
+	'kelp': 'minecraft:kelp',
+	'magma': 'minecraft:magma',
+#	'mobspawner': 'minecraft:mob_spawner',
+	'obsidian': 'minecraft:obsidian',
+	'redstone': 'minecraft:redstone_ore',
+	'village': (
+		# this stuff you only care about if it's under the ground
+		'minecraft:acacia_door',
+		'minecraft:acacia_standing_sign',
+		'minecraft:acacia_stairs',
+		'minecraft:acacia_wall_sign',
+		'minecraft:barrel',
+		'minecraft:bed',
+		'minecraft:bell',
+		'minecraft:blast_furnace',
+		'minecraft:chest',
+		'minecraft:cobblestone_wall',
+		'minecraft:crafting_table',
+		'minecraft:diorite_stairs',
+		'minecraft:double_stone_slab',
+		'minecraft:fence',
+		'minecraft:furnace',
+		'minecraft:glass',
+		'minecraft:glass_pane',
+		'minecraft:grindstone',
+		'minecraft:iron_bars',
+		'minecraft:lantern',
+		'minecraft:planks',
+		'minecraft:stone_brick_stairs',
+		'minecraft:stone_slab',
+		'minecraft:stone_stairs',
+		'minecraft:spruce_door',
+		'minecraft:spruce_stairs',
+		'minecraft:spruce_fence_gate',
+		'minecraft:wooden_door',
+	),
+}
+
 IGNORE = set([
-	'minecraft:acacia_door',
-	'minecraft:acacia_standing_sign',
-	'minecraft:acacia_stairs',
 	'minecraft:air',
 	'minecraft:bedrock',
+	'minecraft:blue_ice',
 	'minecraft:bone_block',
 	'minecraft:bubble_column',
-	'minecraft:coal_ore',
 	'minecraft:cobblestone',
 	'minecraft:dirt',
 	'minecraft:double_plant',
 	'minecraft:double_wooden_slab',
 	'minecraft:farmland',
-	'minecraft:fence',
+	'minecraft:flowing_lava',
 	'minecraft:flowing_water',
-	'minecraft:glass',
-	'minecraft:glass_pane',
 	'minecraft:grass',
 	'minecraft:grass_path',
 	'minecraft:gravel',
+	'minecraft:ice',
 	'minecraft:ladder',
 	'minecraft:lava',
 	'minecraft:leaves',
 	'minecraft:leaves2',
+	'minecraft:monster_egg',
 	'minecraft:mossy_cobblestone',
-	'minecraft:obsidian',
-	'minecraft:planks',
+	'minecraft:packed_ice',
 	'minecraft:rail',
 	'minecraft:sand',
 	'minecraft:sandstone',
 	'minecraft:seagrass',
+	'minecraft:snow',
+	'minecraft:snow_layer',
 	'minecraft:stonebrick',
 	'minecraft:stone',
 	'minecraft:tallgrass',
 	'minecraft:torch',
+	'minecraft:vine',
 	'minecraft:water',
 	'minecraft:web',
 	'minecraft:wooden_slab',
 
-	'minecraft:barrel',
-	'minecraft:chest',
-	'minecraft:bell',
-
-	'minecraft:bed',
-
+	# logs
+	'minecraft:deadbush',
 	'minecraft:log',
 	'minecraft:log2',
+	'minecraft:stripped_spruce_log',
 	'minecraft:wood',
 
+	# food
 	'minecraft:hay_block',
 
 	'minecraft:beetroot',
@@ -131,22 +180,12 @@ IGNORE = set([
 	'minecraft:melon_stem',
 	'minecraft:wheat',
 
+	# mushrooms
 	'minecraft:brown_mushroom',
 	'minecraft:red_mushroom',
 	'minecraft:yellow_flower',
-])
 
-OPTIONAL_BLOCKS = {
-	'clay': (
-		'minecraft:clay',
-		'minecraft:stained_hardened_clay',
-	),
-	'iron': 'minecraft:iron_ore',
-	'kelp': 'minecraft:kelp',
-	'magma': 'minecraft:magma',
-	'mobspawner': 'minecraft:mob_spawner',
-	'redstone': 'minecraft:redstone_ore',
-}
+])
 
 def init_logger(log_level: int) -> logging.Logger:
 	levels = {
