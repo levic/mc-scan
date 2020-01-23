@@ -286,9 +286,9 @@ def show_interesting(found_grouped, found_with_dist):
 
 def parse():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('center_x', type=int)
-	parser.add_argument('center_y', type=int)
-	parser.add_argument('center_z', type=int)
+	parser.add_argument('center_x', type=str)
+	parser.add_argument('center_y', type=str)
+	parser.add_argument('center_z', type=str)
 	parser.add_argument('--ymin', type=int, default=Y_MIN)
 	parser.add_argument('--ymax', type=int, default=Y_MAX)
 	parser.add_argument('--dist', type=int, default=DEFAULT_MAX_DIST)
@@ -297,6 +297,9 @@ def parse():
 	for opt in OPTIONAL_BLOCKS:
 		parser.add_argument(f'--{opt}', default=False, action='store_true')
 	opts = parser.parse_args(sys.argv[1:])
+	opts.center_x = int(opts.center_x.rstrip(','))
+	opts.center_y = int(opts.center_y.rstrip(','))
+	opts.center_z = int(opts.center_z.rstrip(','))
 	return opts
 
 def run():
