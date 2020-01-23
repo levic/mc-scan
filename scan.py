@@ -249,7 +249,9 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 					((center_x+dist, z) for z in range(center_z-dist+1, center_z+dist+1-1)),
 				)
 			for x, z in coords:
+				logger.debug(f'  Check {x}, *, {z}')
 				for y in range(y_min, y_max+1):
+#					logger.debug(f'  Check {x}, {y}, {z}')
 					block = world.getBlock(x, y, z)
 
 					if block is None:
@@ -264,7 +266,8 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 						add_interesting(x, y, z, name, dv)
 #						print(name, dv)
 					else:
-						print(name, dv)
+						logger.error(f'Unrecognised block {name}/{dv}')
+#						print(name, dv)
 						if block.nbt is not None:
 							logger.error(x, y, z, block.name, block.nbt)
 #							raise Exception(f'Found an NBT at {x},{y},{z}')
