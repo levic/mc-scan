@@ -64,6 +64,7 @@ DV_LOOKUPS = {
 INTERESTING = set([
 	'minecraft:chest',
 	'minecraft:diamond_ore',
+	'minecraft:emerald_ore',
 	'minecraft:gold_ore',
 	'minecraft:lapis_ore',
 	'minecraft:mob_spawner',
