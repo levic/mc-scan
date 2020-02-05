@@ -1,0 +1,12 @@
+- https://github.com/levic/mc-scan/tree/master/bedrock
+	- https://github.com/BluCodeGH/bedrock/blob/master/bedrock/leveldb.py
+		- https://github.com/Podshot/MCEdit-Unified/blob/3e0b25899a63f4787115476b07db144c6d376b54/pymclevel/leveldb.py
+
+
+- leveldb
+	- https://github.com/Mojang/leveldb-mcpe/blob/8fb685effc48819cb54b2f353871fbc80b8c67ed/db/c.cc#L286
+	- https://github.com/Mojang/leveldb-mcpe/blob/8fb685effc48819cb54b2f353871fbc80b8c67ed/db/repair.cc
+
+- https://minecraft.gamepedia.com/Chunk_format
+
+
