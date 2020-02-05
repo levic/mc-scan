@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
 import argparse
 from collections import defaultdict
-from itertools import chain
+import dotenv
+import functools
+import itertools
 import logging
+import os
 from pathlib import Path
 import sys
 
 import bedrock.leveldb
 
+
+@functools.lru_cache()
+def get_config():
+	config_path = Path(__file__).parent.joinpath('settings.inc')
+	dotenv.load_dotenv(dotenv_path=config_path)
+	config_vars = [
+		'level_name',
+		'source_worlds',
+	]
+	return {key: os.getenv(key) for key in config_vars}
+
+
 DEFAULT_MAX_DIST = 20
-#WORLD_PATH = Path('~/minecraft/worlds/The Cameron World II (577830886)')
-DEFAULT_WORLD_PATH = Path('worlds/The Cameron World II (577830886)')
+DEFAULT_WORLD_PATH = Path(__file__).parent.joinpath('worlds', get_config()['level_name'])
 
 logger: logging.Logger = None
 
@@ -239,7 +253,7 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 			if dist == 0:
 				coords = ((center_x, center_z), )
 			else:
-				coords = chain(
+				coords = itertools.chain(
 					# top
 					((x, center_z-dist) for x in range(center_x-dist, center_x+dist+1)),
 					# bottom
