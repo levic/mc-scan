@@ -5,4 +5,4 @@ killall --signal KILL bedrock_server
 
 sleep 3
 
-#systemctl --user start minecraft@default
+systemctl --user status $unit
