@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -o pipefail
 
-cd "$( dirname "${BASH_SOURCE[0]}")"
+cd "$( dirname $( realpath "${BASH_SOURCE[0]}") )"
 source "settings.inc"
 
 if [[ $VIRTUAL_ENV = "" ]] ; then

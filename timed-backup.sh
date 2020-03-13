@@ -1,10 +1,10 @@
 #!/bin/bash -e
 set -o pipefail
 
-cd "$( dirname "${BASH_SOURCE[0]}")"
+cd "$( dirname $( realpath "${BASH_SOURCE[0]}") )"
 source "settings.inc"
 
-backup_limit=3
+backup_limit=5
 
 mkdir -p backups
 
@@ -21,7 +21,7 @@ while true ; do
 	fi
 	target="backups/$level_name.$( date +%Y%m%d.%H%M%S )"
 	echo -n "Backup to $target"
-	cp -pr "$source_worlds/$level_name" "$target"
+	cp -pr "$source_worlds/$level_name" "$target" || :
 	echo "."
 	sleep 60
 done
