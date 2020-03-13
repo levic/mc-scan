@@ -4,13 +4,27 @@ from collections import defaultdict
 import dotenv
 import functools
 import itertools
+import json
 import logging
 import os
 from pathlib import Path
 import sys
+from typing import Tuple
 
 import bedrock.leveldb
 
+# time: 32x32 => 3.37 sec,
+#  27k output with 4 char indent
+#  13k output with no indent
+#  <3k output with no indent + gzip
+
+
+# ---------------------------------------------------------------------------
+
+BlockType = str
+Coords = Tuple[float, float, float]
+
+# ---------------------------------------------------------------------------
 
 @functools.lru_cache()
 def get_config():
@@ -104,32 +118,27 @@ OPTIONAL_BLOCKS = {
 	'iron': 'minecraft:iron_ore',
 	'kelp': 'minecraft:kelp',
 	'magma': 'minecraft:magma',
-#	'mobspawner': 'minecraft:mob_spawner',
 	'obsidian': 'minecraft:obsidian',
 	'redstone': 'minecraft:redstone_ore',
 	'village': (
 		# this stuff you only care about if it's under the ground
 		'minecraft:acacia_door',
-		'minecraft:acacia_standing_sign',
 		'minecraft:acacia_stairs',
-		'minecraft:acacia_wall_sign',
 		'minecraft:barrel',
 		'minecraft:bed',
 		'minecraft:bell',
 		'minecraft:blast_furnace',
-		'minecraft:chest',
 		'minecraft:cobblestone_wall',
 		'minecraft:crafting_table',
 		'minecraft:diorite_stairs',
 		'minecraft:double_stone_slab',
-		'minecraft:fence',
 		'minecraft:furnace',
 		'minecraft:glass',
 		'minecraft:glass_pane',
 		'minecraft:grindstone',
 		'minecraft:iron_bars',
 		'minecraft:lantern',
-		'minecraft:planks',
+		'minecraft:rail',
 		'minecraft:stone_brick_stairs',
 		'minecraft:stone_slab',
 		'minecraft:stone_stairs',
@@ -141,6 +150,8 @@ OPTIONAL_BLOCKS = {
 }
 
 IGNORE = set([
+	'minecraft:acacia_standing_sign',
+	'minecraft:acacia_wall_sign',
 	'minecraft:air',
 	'minecraft:bedrock',
 	'minecraft:blue_ice',
@@ -151,6 +162,7 @@ IGNORE = set([
 	'minecraft:double_plant',
 	'minecraft:double_wooden_slab',
 	'minecraft:farmland',
+	'minecraft:fence',
 	'minecraft:flowing_lava',
 	'minecraft:flowing_water',
 	'minecraft:grass',
@@ -164,7 +176,7 @@ IGNORE = set([
 	'minecraft:monster_egg',
 	'minecraft:mossy_cobblestone',
 	'minecraft:packed_ice',
-	'minecraft:rail',
+	'minecraft:planks',
 	'minecraft:sand',
 	'minecraft:sandstone',
 	'minecraft:seagrass',
@@ -217,7 +229,7 @@ def init_logger(log_level: int) -> logging.Logger:
 def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 	center_x, center_y, center_z = center
 	y_min, y_max = y_range
-	found_grouped = defaultdict(lambda: defaultdict(lambda: 0))
+	found_grouped: Dict[Block, Dict[Coords, int]] = defaultdict(lambda: defaultdict(lambda: 0))
 	found_with_dist = defaultdict(list)
 
 	interesting_blocks = INTERESTING.copy()
@@ -240,7 +252,7 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 
 	def add_interesting(x, y, z, name, dv):
 		found_with_dist[name].append((get_dist(x, y, z), x, y, z))
-		ROUND = 4
+		ROUND = 1
 		x = x - (x % ROUND)
 		y = y - (y % ROUND)
 		z = z - (z % ROUND)
@@ -288,7 +300,7 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
 #							raise Exception(f'Found an NBT at {x},{y},{z}')
 	return found_grouped, found_with_dist
 
-def show_interesting(found_grouped, found_with_dist):
+def show_interesting_text(found_grouped, found_with_dist):
 	for name in sorted(found_with_dist.keys()):
 		total = len(found_with_dist[name])
 		print('------------------------------------------------------------------------')
@@ -298,6 +310,18 @@ def show_interesting(found_grouped, found_with_dist):
 #			print(name, dist, (x, y, z), count)
 		for dist, x, y, z in sorted(found_with_dist[name]):
 			print(name, dist, '(', x, y, z, ')')
+
+def show_interesting_json(found_grouped, found_with_dist):
+	data = {}
+	for block_name, coords_count in found_grouped.items():
+		if block_name not in data:
+			data[block_name] = {}
+		for (x,y,z), count in coords_count.items():
+			if f"{x},{z}" not in data[block_name]:
+				data[block_name][f"{x},{z}"] = []
+			data[block_name][f"{x},{z}"].append(y)
+	print(json.dumps(data, indent=None))
+	
 
 def parse():
 	parser = argparse.ArgumentParser()
@@ -309,6 +333,7 @@ def parse():
 	parser.add_argument('--dist', type=int, default=DEFAULT_MAX_DIST)
 	parser.add_argument('--world', type=str, default=DEFAULT_WORLD_PATH)
 	parser.add_argument('--verbose', '-v', action='count', default=0, dest='log_level')
+	parser.add_argument('--json', action='store_const', default='text', const='json', dest='format')
 	for opt in OPTIONAL_BLOCKS:
 		parser.add_argument(f'--{opt}', default=False, action='store_true')
 	opts = parser.parse_args(sys.argv[1:])
@@ -328,7 +353,11 @@ def run():
 		opts.world,
 		{ key: getattr(opts, key) for key in OPTIONAL_BLOCKS },
 	)
-	show_interesting(found_grouped, found_with_dist)
+	show_fns = {
+		'text': show_interesting_text,
+		'json': show_interesting_json,
+	}
+	show_fns[opts.format](found_grouped, found_with_dist)
 
 if __name__ == '__main__':
 	run()
