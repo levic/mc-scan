@@ -9,6 +9,14 @@ if [[ $VIRTUAL_ENV = "" ]] ; then
 	exit 1
 fi
 
+tmpdir=/run/user/$UID/mc-worlds
+if ! [[ -e $tmpdir ]]  ; then
+	mkdir -p "$tmpdir"
+fi
+if ! [[ -e worlds ]] ; then
+	ln -s "$tmpdir" worlds
+fi
+
 cp -pr "$source_worlds/$level_name" worlds/
 #ls -l worlds/"$name"/db/LOCK
 
