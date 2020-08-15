@@ -305,11 +305,21 @@ def show_interesting_text(found_grouped, found_with_dist):
 		total = len(found_with_dist[name])
 		print('------------------------------------------------------------------------')
 		print('TOTAL', name, total)
-#		print(name)
-#		for (x, y, z), count in found_grouped[name].items():
-#			print(name, dist, (x, y, z), count)
 		for dist, x, y, z in sorted(found_with_dist[name]):
 			print(name, dist, '(', x, y, z, ')')
+
+def show_interesting_text_closest(found_grouped, found_with_dist):
+	merged_list = []
+	for name in sorted(found_with_dist.keys()):
+		merged_list += [ (dist, name, x, y, z) for dist, x, y, z in found_with_dist[name] ]
+	merged_list.sort()
+
+	total = len(merged_list)
+	print('------------------------------------------------------------------------')
+	print('TOTAL', total)
+	for dist, name, x, y, z in merged_list:
+		print(name, dist, '(', x, y, z, ')')
+
 
 def show_interesting_json(found_grouped, found_with_dist):
 	data = {}
@@ -334,6 +344,7 @@ def parse():
 	parser.add_argument('--world', type=str, default=DEFAULT_WORLD_PATH)
 	parser.add_argument('--verbose', '-v', action='count', default=0, dest='log_level')
 	parser.add_argument('--json', action='store_const', default='text', const='json', dest='format')
+	parser.add_argument('--closest', action='store_const', default='text', const='text_closest', dest='format')
 	for opt in OPTIONAL_BLOCKS:
 		parser.add_argument(f'--{opt}', default=False, action='store_true')
 	opts = parser.parse_args(sys.argv[1:])
@@ -355,6 +366,7 @@ def run():
 	)
 	show_fns = {
 		'text': show_interesting_text,
+		'text_closest': show_interesting_text_closest,
 		'json': show_interesting_json,
 	}
 	show_fns[opts.format](found_grouped, found_with_dist)
