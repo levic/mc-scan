@@ -1,3 +1,8 @@
+# path to minecraft worlds
+source_worlds=~/worlds
+
+# world directory name
 level_name="Bedrock World"
-source_worlds=~/minecraft/worlds
-unit=minecraft@default
+
+# systemd service being used to run minecraft
+unit="minecraft@default"
