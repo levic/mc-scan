@@ -1,0 +1,3 @@
+[submodule "submodule/bedrock"]
+	path = submodule/bedrock
+	url = git@github.com:BluCodeGH/bedrock.git

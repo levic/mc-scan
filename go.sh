@@ -5,7 +5,7 @@ cd "$( dirname $( realpath "${BASH_SOURCE[0]}") )"
 source "settings.inc"
 
 if [[ $VIRTUAL_ENV = "" ]] ; then
-	echo "Need to run 'workon mc-scan' first"
+	echo "Need to activate virtualenv first"
 	exit 1
 fi
 
