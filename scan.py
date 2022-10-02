@@ -37,13 +37,13 @@ Coords = Tuple[float, float, float]
 
 @functools.lru_cache()
 def get_config():
-	config_path = Path(__file__).parent.joinpath('settings.inc')
-	dotenv.load_dotenv(dotenv_path=config_path)
-	config_vars = [
-		'level_name',
-		'source_worlds',
-	]
-	return {key: os.getenv(key) for key in config_vars}
+    config_path = Path(__file__).parent.joinpath('settings.inc')
+    dotenv.load_dotenv(dotenv_path=config_path)
+    config_vars = [
+        'level_name',
+        'source_worlds',
+    ]
+    return {key: os.getenv(key) for key in config_vars}
 
 
 DEFAULT_MAX_DIST = 20
@@ -72,12 +72,12 @@ WOOD_JUNGLE =3
 WOOD_ACACIA = 4
 WOOD_DARKOAK = 5
 DV_WOOD = {
-	WOOD_OAK: 'Oak',
-	WOOD_SPRUCE: 'Spruce',
-	WOOD_BIRCH: 'Birch',
-	WOOD_JUNGLE: 'Jungle',
-	WOOD_ACACIA: 'Acacia',
-	WOOD_DARKOAK: 'Dark Oak',
+    WOOD_OAK: 'Oak',
+    WOOD_SPRUCE: 'Spruce',
+    WOOD_BIRCH: 'Birch',
+    WOOD_JUNGLE: 'Jungle',
+    WOOD_ACACIA: 'Acacia',
+    WOOD_DARKOAK: 'Dark Oak',
 }
 
 STONE_STONE = 0
@@ -88,18 +88,18 @@ STONE_DIORITEPOLISHED = 4
 STONE_ANDESITE = 5
 STONE_ANDESITEPOLISHED = 6
 DV_STONE = {
-	STONE_STONE: 'Stone',
-	STONE_GRANITE: 'Granite',
-	STONE_GRANITEPOLISHED: 'Polished Granite',
-	STONE_DIORITE: 'Diorite',
-	STONE_DIORITEPOLISHED: 'Polished Diorite',
-	STONE_ANDESITE: 'Andesite',
-	STONE_ANDESITEPOLISHED: 'Polished Andesite',
+    STONE_STONE: 'Stone',
+    STONE_GRANITE: 'Granite',
+    STONE_GRANITEPOLISHED: 'Polished Granite',
+    STONE_DIORITE: 'Diorite',
+    STONE_DIORITEPOLISHED: 'Polished Diorite',
+    STONE_ANDESITE: 'Andesite',
+    STONE_ANDESITEPOLISHED: 'Polished Andesite',
 }
 
 DV_LOOKUPS = {
-	'minecraft:stone': DV_STONE,
-	'minecraft:wood': DV_WOOD,
+    'minecraft:stone': DV_STONE,
+    'minecraft:wood': DV_WOOD,
 }
 
 INTERESTING = set([
@@ -320,15 +320,15 @@ IGNORE = set([
 ])
 
 def init_logger(log_level: int) -> logging.Logger:
-	levels = {
-		0: logging.WARNING,
-		1: logging.INFO,
-		2: logging.DEBUG
-	}
-	level = levels[min(len(levels), log_level)]
-	logging.basicConfig(level=level, format='%(levelname)-8s %(message)s')
-	logger = logging.getLogger('mc-scan')
-	return logger
+    levels = {
+        0: logging.WARNING,
+        1: logging.INFO,
+        2: logging.DEBUG
+    }
+    level = levels[min(len(levels), log_level)]
+    logging.basicConfig(level=level, format='%(levelname)-8s %(message)s')
+    logger = logging.getLogger('mc-scan')
+    return logger
 
 
 def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
@@ -426,75 +426,75 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
     return found_grouped, found_with_dist
 
 def show_interesting_text(found_grouped, found_with_dist):
-	for name in sorted(found_with_dist.keys()):
-		total = len(found_with_dist[name])
-		print('------------------------------------------------------------------------')
-		print('TOTAL', name, total)
-		for dist, x, y, z in sorted(found_with_dist[name]):
-			print(name, dist, '(', x, y, z, ')')
+    for name in sorted(found_with_dist.keys()):
+        total = len(found_with_dist[name])
+        print('------------------------------------------------------------------------')
+        print('TOTAL', name, total)
+        for dist, x, y, z in sorted(found_with_dist[name]):
+            print(name, dist, '(', x, y, z, ')')
 
 def show_interesting_text_closest(found_grouped, found_with_dist):
-	merged_list = []
-	for name in sorted(found_with_dist.keys()):
-		merged_list += [ (dist, name, x, y, z) for dist, x, y, z in found_with_dist[name] ]
-	merged_list.sort()
+    merged_list = []
+    for name in sorted(found_with_dist.keys()):
+        merged_list += [ (dist, name, x, y, z) for dist, x, y, z in found_with_dist[name] ]
+    merged_list.sort()
 
-	total = len(merged_list)
-	print('------------------------------------------------------------------------')
-	print('TOTAL', total)
-	for dist, name, x, y, z in merged_list:
-		print(name, dist, '(', x, y, z, ')')
+    total = len(merged_list)
+    print('------------------------------------------------------------------------')
+    print('TOTAL', total)
+    for dist, name, x, y, z in merged_list:
+        print(name, dist, '(', x, y, z, ')')
 
 
 def show_interesting_json(found_grouped, found_with_dist):
-	data = {}
-	for block_name, coords_count in found_grouped.items():
-		if block_name not in data:
-			data[block_name] = {}
-		for (x,y,z), count in coords_count.items():
-			if f"{x},{z}" not in data[block_name]:
-				data[block_name][f"{x},{z}"] = []
-			data[block_name][f"{x},{z}"].append(y)
-	print(json.dumps(data, indent=None))
-	
+    data = {}
+    for block_name, coords_count in found_grouped.items():
+        if block_name not in data:
+            data[block_name] = {}
+        for (x,y,z), count in coords_count.items():
+            if f"{x},{z}" not in data[block_name]:
+                data[block_name][f"{x},{z}"] = []
+            data[block_name][f"{x},{z}"].append(y)
+    print(json.dumps(data, indent=None))
+    
 
 def parse():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('center_x', type=str)
-	parser.add_argument('center_y', type=str)
-	parser.add_argument('center_z', type=str)
-	parser.add_argument('--ymin', type=int, default=Y_MIN)
-	parser.add_argument('--ymax', type=int, default=Y_MAX)
-	parser.add_argument('--dist', type=int, default=DEFAULT_MAX_DIST)
-	parser.add_argument('--world', type=str, default=DEFAULT_WORLD_PATH)
-	parser.add_argument('--verbose', '-v', action='count', default=0, dest='log_level')
-	parser.add_argument('--json', action='store_const', default='text', const='json', dest='format')
-	parser.add_argument('--closest', action='store_const', default='text', const='text_closest', dest='format')
-	for opt in OPTIONAL_BLOCKS:
-		parser.add_argument(f'--{opt}', default=False, action='store_true')
-	opts = parser.parse_args(sys.argv[1:])
-	opts.center_x = int(opts.center_x.rstrip(','))
-	opts.center_y = int(opts.center_y.rstrip(','))
-	opts.center_z = int(opts.center_z.rstrip(','))
-	return opts
+    parser = argparse.ArgumentParser()
+    parser.add_argument('center_x', type=str)
+    parser.add_argument('center_y', type=str)
+    parser.add_argument('center_z', type=str)
+    parser.add_argument('--ymin', type=int, default=DEFAULT_Y_MIN)
+    parser.add_argument('--ymax', type=int, default=DEFAULT_Y_MAX)
+    parser.add_argument('--dist', type=int, default=DEFAULT_MAX_DIST)
+    parser.add_argument('--world', type=str, default=DEFAULT_WORLD_PATH)
+    parser.add_argument('--verbose', '-v', action='count', default=0, dest='log_level')
+    parser.add_argument('--json', action='store_const', default='text', const='json', dest='format')
+    parser.add_argument('--closest', action='store_const', default='text', const='text_closest', dest='format')
+    for opt in OPTIONAL_BLOCKS:
+        parser.add_argument(f'--{opt}', default=False, action='store_true')
+    opts = parser.parse_args(sys.argv[1:])
+    opts.center_x = int(opts.center_x.rstrip(','))
+    opts.center_y = int(opts.center_y.rstrip(','))
+    opts.center_z = int(opts.center_z.rstrip(','))
+    return opts
 
 def run():
-	opts = parse()
-	global logger
-	logger = init_logger(opts.log_level)
-	found_grouped, found_with_dist = scan(
-		(opts.center_x, opts.center_y, opts.center_z),
-		(opts.ymin, opts.ymax),
-		opts.dist,
-		opts.world,
-		{ key: getattr(opts, key) for key in OPTIONAL_BLOCKS },
-	)
-	show_fns = {
-		'text': show_interesting_text,
-		'text_closest': show_interesting_text_closest,
-		'json': show_interesting_json,
-	}
-	show_fns[opts.format](found_grouped, found_with_dist)
+    opts = parse()
+    global logger
+    logger = init_logger(opts.log_level)
+    found_grouped, found_with_dist = scan(
+        (opts.center_x, opts.center_y, opts.center_z),
+        (opts.ymin, opts.ymax),
+        opts.dist,
+        opts.world,
+        { key: getattr(opts, key) for key in OPTIONAL_BLOCKS },
+    )
+    show_fns = {
+        'text': show_interesting_text,
+        'text_closest': show_interesting_text_closest,
+        'json': show_interesting_json,
+    }
+    show_fns[opts.format](found_grouped, found_with_dist)
 
 if __name__ == '__main__':
-	run()
+    run()
