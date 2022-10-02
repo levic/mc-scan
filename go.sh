@@ -19,7 +19,9 @@ if ! [[ -e worlds ]] ; then
 	ln -s "$tmpdir" worlds
 fi
 
+#rm -rf worlds/*
 cp -pr "$source_worlds/$level_name" worlds/
+ls -l  -t --time-style=full-iso "worlds/$level_name/db" | head -n 2 | tail -n 1
 #ls -l worlds/"$name"/db/LOCK
 
 ./scan.py "$@" --world "worlds/$level_name"
