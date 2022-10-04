@@ -6,9 +6,9 @@ set -o pipefail
 cd "$( dirname $( realpath "${BASH_SOURCE[0]}") )"
 source "./settings.inc"
 
-if [[ $VIRTUAL_ENV = "" ]] ; then
-	echo "Need to activate virtualenv first"
-	exit 1
+if [[ ${VIRTUAL_ENV:-} = "" ]] ; then
+	[[ -e venv/bin/activate ]] || { echo "Can't find venv" >&2 ; exit 1 ; }
+	source venv/bin/activate
 fi
 
 tmpdir="/run/user/$UID/mc-worlds"
