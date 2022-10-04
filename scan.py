@@ -19,13 +19,10 @@ import bedrock.leveldb
 #  <3k output with no indent + gzip
 
 # TODO:
-# --down
-# --up
 # --north
 # --east
 # --west
 # --south
-# --yrange
 
 
 # ---------------------------------------------------------------------------
@@ -51,12 +48,14 @@ DEFAULT_WORLD_PATH = Path(__file__).parent.joinpath('worlds', get_config()['leve
 
 logger: logging.Logger = None
 
+# y coordinate ranges
+Y_MIN = -63
+Y_MAX = 319
+
 # default coordinate scans
 DEFAULT_Y_MIN = -63
 DEFAULT_Y_MAX = 60
-# since 1.19 it seems that the lowest coordinate is now -64
-# but in the DB things still start at 0 and are adjusted by -64 after loading
-Y_OFFSET = 64
+DEFAULT_Y_DIST = 40
 
 # bottom of the ladder
 center_x = 989
@@ -397,11 +396,8 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
             for x, z in coords:
                 logger.debug(f'  Check {x}, *, {z}')
                 for y in range(y_min, y_max+1):
-                    # this offset matches Amulet's view of the world
-#                   y_db = y - Y_OFFSET
-                    y_db = y
-                    logger.debug(f'  Check {x}, {y} {y_db}, {z}')
-                    block = world.getBlock(x, y_db, z)
+                    logger.debug(f'  Check {x}, {y}, {z}')
+                    block = world.getBlock(x, y, z)
 
                     if block is None:
                         #print(f'  block {block}')
@@ -431,7 +427,7 @@ def show_interesting_text(found_grouped, found_with_dist):
         print('------------------------------------------------------------------------')
         print('TOTAL', name, total)
         for dist, x, y, z in sorted(found_with_dist[name]):
-            print(name, dist, '(', x, y, z, ')')
+            print(name, f'{dist:6} ({x:4} {y:4} {z:4})')
 
 def show_interesting_text_closest(found_grouped, found_with_dist):
     merged_list = []
@@ -463,25 +459,53 @@ def parse():
     parser.add_argument('center_x', type=str)
     parser.add_argument('center_y', type=str)
     parser.add_argument('center_z', type=str)
-    parser.add_argument('--ymin', type=int, default=DEFAULT_Y_MIN)
-    parser.add_argument('--ymax', type=int, default=DEFAULT_Y_MAX)
+    parser.add_argument('--ymin', type=int, default=None)
+    parser.add_argument('--ymax', type=int, default=None)
     parser.add_argument('--dist', type=int, default=DEFAULT_MAX_DIST)
     parser.add_argument('--world', type=str, default=DEFAULT_WORLD_PATH)
     parser.add_argument('--verbose', '-v', action='count', default=0, dest='log_level')
     parser.add_argument('--json', action='store_const', default='text', const='json', dest='format')
     parser.add_argument('--closest', action='store_const', default='text', const='text_closest', dest='format')
+    parser.add_argument('--up', action='store_true')
+    parser.add_argument('--down', action='store_true')
+    parser.add_argument('--ydist', type=int, default=None)
     for opt in OPTIONAL_BLOCKS:
         parser.add_argument(f'--{opt}', default=False, action='store_true')
     opts = parser.parse_args(sys.argv[1:])
     opts.center_x = int(opts.center_x.rstrip(','))
     opts.center_y = int(opts.center_y.rstrip(','))
     opts.center_z = int(opts.center_z.rstrip(','))
+
+
+    ymax_candidates = [
+        opts.ymax,
+        opts.center_y if opts.down else None,
+        opts.center_y + opts.ydist if opts.ydist else None,
+        max(DEFAULT_Y_MAX, opts.center_y + DEFAULT_Y_DIST)
+    ]
+    opts.ymax = next(y for y in ymax_candidates if y is not None)
+    opts.ymax = min(opts.ymax, Y_MAX)
+
+    ymin_candidates = [
+        opts.ymin,
+        opts.center_y if opts.up else None,
+        opts.center_y - opts.ydist if opts.ydist else None,
+        min(DEFAULT_Y_MIN, opts.center_y - DEFAULT_Y_DIST)
+    ]
+    opts.ymin = next(y for y in ymin_candidates if y is not None)
+    opts.ymin = max(Y_MIN, opts.ymin)
+
     return opts
 
 def run():
     opts = parse()
     global logger
     logger = init_logger(opts.log_level)
+    logger.info('Searching'
+       f' [{opts.center_x-opts.dist}-{opts.center_x+opts.dist}]'
+       f' [{opts.ymin}-{opts.ymax}]'
+       f' [{opts.center_z-opts.dist}-{opts.center_z+opts.dist}]'
+       )
     found_grouped, found_with_dist = scan(
         (opts.center_x, opts.center_y, opts.center_z),
         (opts.ymin, opts.ymax),
