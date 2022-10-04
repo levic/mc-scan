@@ -13,17 +13,11 @@ from typing import Tuple
 
 import bedrock.leveldb
 
+# timings for potential future json output
 # time: 32x32 => 3.37 sec,
 #  27k output with 4 char indent
 #  13k output with no indent
 #  <3k output with no indent + gzip
-
-# TODO:
-# --north
-# --east
-# --west
-# --south
-
 
 # ---------------------------------------------------------------------------
 
@@ -102,10 +96,6 @@ DV_LOOKUPS = {
 }
 
 INTERESTING = set([
-    'minecraft:amethyst_block',
-    'minecraft:amethyst_cluster',
-    'minecraft:budding_amethyst',
-
     'minecraft:chest',
 
     'minecraft:deepslate_diamond_ore',
@@ -128,6 +118,14 @@ INTERESTING = set([
 ])
 
 OPTIONAL_BLOCKS = {
+    'amethyst': (
+        'minecraft:amethyst_block',
+        'minecraft:amethyst_cluster',
+        'minecraft:budding_amethyst',
+        'minecraft:small_amethyst_bud',
+        'minecraft:medium_amethyst_bud',
+        'minecraft:large_amethyst_bud',
+    ),
     'books': (
         'minecraft:bookshelf',
     ),
@@ -136,11 +134,15 @@ OPTIONAL_BLOCKS = {
         'minecraft:hardened_clay',
         'minecraft:stained_hardened_clay',
     ),
-    'coal': 'minecraft:coal_ore',
+    'coal': (
+        'minecraft:coal_ore',
+        'minecraft:deepslate_coal_ore',
+    ),
     'copper': (
         'minecraft:copper_ore',
         'minecraft:deepslate_copper_ore',
-        ),
+        'minecraft:raw_copper_block',
+    ),
     'deep': (
         'minecraft:chiseled_deepslate',
         'minecraft:cracked_deepslate_bricks',
@@ -261,11 +263,14 @@ IGNORE = set([
     'minecraft:acacia_wall_sign',
     'minecraft:fence',
     'minecraft:hopper',
+    'minecraft:jungle_fence',
+    'minecraft:jungle_fence_gate',
     'minecraft:ladder',
     'minecraft:lectern',
     'minecraft:lever',
     'minecraft:lit_redstone_lamp',
     'minecraft:lit_deepslate_redstone_ore',
+    'minecraft:normal_stone_stairs',
     'minecraft:planks',
     'minecraft:powered_comparator',
     'minecraft:powered_repeater',
@@ -330,9 +335,11 @@ def init_logger(log_level: int) -> logging.Logger:
     return logger
 
 
-def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
+def scan(center, x_range, y_range, z_range, max_dist, world_path, optional_blocks_chosen):
     center_x, center_y, center_z = center
+    x_min, x_max = x_range
     y_min, y_max = y_range
+    z_min, z_max = z_range
     found_grouped: Dict[Block, Dict[Coords, int]] = defaultdict(lambda: defaultdict(lambda: 0))
     found_with_dist = defaultdict(list)
 
@@ -377,26 +384,55 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
         found_grouped[name][(x, y, z)] += 1
         #print(found_with_dist[name])
 
+#    seen = set()
+
     with bedrock.World(world_path) as world:
         for dist in range(0, max_dist+1):
             logger.info(f'Dist {dist}')
             if dist == 0:
                 coords = ((center_x, center_z), )
             else:
-                coords = itertools.chain(
-                    # top
-                    ((x, center_z-dist) for x in range(center_x-dist, center_x+dist+1)),
-                    # bottom
-                    ((x, center_z+dist) for x in range(center_x-dist, center_x+dist+1)),
-                    # left
-                    ((center_x-dist, z) for z in range(center_z-dist+1, center_z+dist+1-1)),
-                    # right
-                    ((center_x+dist, z) for z in range(center_z-dist+1, center_z+dist+1-1)),
-                )
+                top = []
+                bottom = []
+                left = []
+                right = []
+
+                z_top = center_z - dist
+                top = \
+                    ((x, z_top) for x in range(
+                        max(center_x-dist, x_min),
+                        min(center_x+dist+1, x_max+1),
+                    )) if z_top >= z_min else []
+
+                z_bottom = center_z + dist
+                bottom = \
+                    ((x, z_bottom) for x in range(
+                        max(center_x-dist, x_min),
+                        min(center_x+dist+1, x_max+1),
+                    )) if z_bottom <= z_max else []
+
+                x_left = center_x - dist
+                left = \
+                    ((x_left, z) for z in range(
+                        max(center_z-dist+1, z_min),
+                        min(center_z+dist+1-1, z_max+1),
+                    )) if x_left >= x_min else []
+
+                x_right = center_x + dist
+                right = \
+                    ((x_right, z) for z in range(
+                        max(center_z-dist+1, z_min),
+                        min(center_z+dist+1-1, z_max+1),
+                    )) if x_right <= x_max else []
+
+                coords = itertools.chain(top, bottom, left, right)
+
             for x, z in coords:
-                logger.debug(f'  Check {x}, *, {z}')
+                logger.debug(f'  Check {x:4},    *, {z:4}')
+#                assert (x,z) not in seen
+#                seen.add((x,z))
                 for y in range(y_min, y_max+1):
-                    logger.debug(f'  Check {x}, {y}, {z}')
+#                    logger.debug(f'        {x:4}, {y:4}, {z:4}')
                     block = world.getBlock(x, y, z)
 
                     if block is None:
@@ -419,6 +455,20 @@ def scan(center, y_range, max_dist, world_path, optional_blocks_chosen):
                         if block.nbt is not None:
                             logger.error(x, y, z, block.name, block.nbt)
 #                            raise Exception(f'Found an NBT at {x},{y},{z}')
+
+    '''
+    for z in range(100-2, 100+2+1):
+        for x in range(100-2, 100+2+1):
+            if (x, z) == (center_x, center_y):
+                symbol = 'o'
+            elif (x, z) in seen:
+                symbol = 'x'
+            else:
+                symbol = '.'
+            print(symbol, end='')
+        print("\n")
+    '''
+
     return found_grouped, found_with_dist
 
 def show_interesting_text(found_grouped, found_with_dist):
@@ -469,18 +519,27 @@ def parse():
     parser.add_argument('--up', action='store_true')
     parser.add_argument('--down', action='store_true')
     parser.add_argument('--ydist', type=int, default=None)
+    parser.add_argument('--north', action='store_true')
+    parser.add_argument('--south', action='store_true')
+    parser.add_argument('--east', action='store_true')
+    parser.add_argument('--west', action='store_true')
     for opt in OPTIONAL_BLOCKS:
         parser.add_argument(f'--{opt}', default=False, action='store_true')
+
     opts = parser.parse_args(sys.argv[1:])
     opts.center_x = int(opts.center_x.rstrip(','))
     opts.center_y = int(opts.center_y.rstrip(','))
     opts.center_z = int(opts.center_z.rstrip(','))
 
+    if opts.east and opts.west:
+        raise Exception('--east and --west are mutually exclusive')
+    if opts.north and opts.south:
+        raise Exception('--north and --south are mutually exclusive')
 
     ymax_candidates = [
         opts.ymax,
         opts.center_y if opts.down else None,
-        opts.center_y + opts.ydist if opts.ydist else None,
+        opts.center_y + opts.ydist if opts.ydist is not None else None,
         max(DEFAULT_Y_MAX, opts.center_y + DEFAULT_Y_DIST)
     ]
     opts.ymax = next(y for y in ymax_candidates if y is not None)
@@ -489,7 +548,7 @@ def parse():
     ymin_candidates = [
         opts.ymin,
         opts.center_y if opts.up else None,
-        opts.center_y - opts.ydist if opts.ydist else None,
+        opts.center_y - opts.ydist if opts.ydist is not None else None,
         min(DEFAULT_Y_MIN, opts.center_y - DEFAULT_Y_DIST)
     ]
     opts.ymin = next(y for y in ymin_candidates if y is not None)
@@ -501,14 +560,23 @@ def run():
     opts = parse()
     global logger
     logger = init_logger(opts.log_level)
+
+    x_min = opts.center_x - (opts.dist if not opts.east else 0)
+    x_max = opts.center_x + (opts.dist if not opts.west else 0)
+    z_min = opts.center_z - (opts.dist if not opts.south else 0)
+    z_max = opts.center_z + (opts.dist if not opts.north else 0)
+
     logger.info('Searching'
-       f' [{opts.center_x-opts.dist}-{opts.center_x+opts.dist}]'
+       f' [{x_min}-{x_max}]'
        f' [{opts.ymin}-{opts.ymax}]'
-       f' [{opts.center_z-opts.dist}-{opts.center_z+opts.dist}]'
+       f' [{z_min}-{z_max}]'
        )
+
     found_grouped, found_with_dist = scan(
         (opts.center_x, opts.center_y, opts.center_z),
+        (x_min, x_max),
         (opts.ymin, opts.ymax),
+        (z_min, z_max),
         opts.dist,
         opts.world,
         { key: getattr(opts, key) for key in OPTIONAL_BLOCKS },
