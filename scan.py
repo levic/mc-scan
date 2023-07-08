@@ -104,18 +104,21 @@ DV_LOOKUPS = {
 }
 
 INTERESTING: set[BlockType] = {
+    # loot!
     'minecraft:chest',
 
+    # ores/gems
     'minecraft:deepslate_diamond_ore',
     'minecraft:deepslate_gold_ore',
     'minecraft:deepslate_lapis_ore',
     'minecraft:diamond_ore',
     'minecraft:emerald_ore',
-    'minecraft:gold_ore',
     'minecraft:lapis_ore',
 
+    # mobs
     'minecraft:mob_spawner',
 
+    # constructed
     'minecraft:brewing_stand',
     'minecraft:cartography_table',
     'minecraft:cauldron',
@@ -123,6 +126,8 @@ INTERESTING: set[BlockType] = {
 
     'minecraft:portal',
 
+    # nether
+    'minecraft:ancient_debris',
 }
 
 OPTIONAL_BLOCKS: dict[BlockGroupType, set[BlockType]] = {
@@ -136,6 +141,20 @@ OPTIONAL_BLOCKS: dict[BlockGroupType, set[BlockType]] = {
     },
     'books': {
         'minecraft:bookshelf',
+    },
+    'blackstone': {
+        'minecraft:blackstone',
+        'minecraft:blackstone_slab',
+        'minecraft:blackstone_stairs',
+        'minecraft:blackstone_wall',
+        'minecraft:chiseled_polished_blackstone',
+        'minecraft:cracked_polished_blackstone_bricks',
+        'minecraft:gilded_blackstone',
+        'minecraft:polished_blackstone_bricks',
+        'minecraft:polished_blackstone_brick_stairs',
+    },
+    'calcite': {
+        'minecraft:calcite',
     },
     'clay': {
         'minecraft:clay',
@@ -176,9 +195,16 @@ OPTIONAL_BLOCKS: dict[BlockGroupType, set[BlockType]] = {
         'minecraft:soul_fire',
         'minecraft:soul_lantern',
     },
+    'gold': {
+        'minecraft:gold_block',
+        'minecraft:gold_ore',
+        'minecraft:nether_gold_ore',
+    },
     'iron': {
         'minecraft:deepslate_iron_ore',
+        'minecraft:iron_block',
         'minecraft:iron_ore',
+        'minecraft:raw_iron_block',
     },
     'kelp': 'minecraft:kelp',
     'lava': 'minecraft:lava',
@@ -228,7 +254,6 @@ IGNORE: set[BlockType] = {
     'minecraft:blue_ice',
     'minecraft:bone_block',
     'minecraft:bubble_column',
-    'minecraft:calcite',
     'minecraft:candle',
     'minecraft:carpet',
     'minecraft:cobblestone',
@@ -248,8 +273,9 @@ IGNORE: set[BlockType] = {
     'minecraft:leaves2',
     'minecraft:monster_egg',
     'minecraft:mossy_cobblestone',
+    'minecraft:podzol',
     'minecraft:packed_ice',
-    'minecraft:raw_iron_block',
+    'minecraft:reeds',
     'minecraft:sand',
     'minecraft:sandstone',
     'minecraft:seagrass',
@@ -269,6 +295,7 @@ IGNORE: set[BlockType] = {
     # constructed
     'minecraft:acacia_standing_sign',
     'minecraft:acacia_wall_sign',
+    'minecraft:chain',
     'minecraft:fence',
     'minecraft:hopper',
     'minecraft:jungle_fence',
@@ -279,6 +306,8 @@ IGNORE: set[BlockType] = {
     'minecraft:lit_redstone_lamp',
     'minecraft:lit_deepslate_redstone_ore',
     'minecraft:normal_stone_stairs',
+    'minecraft:observer',
+    'minecraft:piston',
     'minecraft:planks',
     'minecraft:powered_comparator',
     'minecraft:powered_repeater',
@@ -293,6 +322,8 @@ IGNORE: set[BlockType] = {
 
 
     # flowers
+    'minecraft:azalea',
+    'minecraft:flowering_azalea',
     'minecraft:red_flower',
     'minecraft:yellow_flower',
     
@@ -328,7 +359,14 @@ IGNORE: set[BlockType] = {
     'minecraft:spore_blossom',
 
     # nether
+    'minecraft:basalt',
+    'minecraft:crimson_roots',
+    'minecraft:fire',
+    'minecraft:netherrack',
+    'minecraft:polished_basalt',
     'minecraft:soul_sand',
+    'minecraft:soul_soil',
+    'minecraft:quartz_ore',
 }
 
 def init_logger(log_level: int) -> logging.Logger:
