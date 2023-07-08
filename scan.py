@@ -25,8 +25,10 @@ import bedrock.leveldb
 
 # ---------------------------------------------------------------------------
 
+BlockGroupType = str
 BlockType = str
-Coords = Tuple[float, float, float]
+Coords = Tuple[int, int, int]
+DistCoords = Tuple[float, int, int, int]
 
 # ---------------------------------------------------------------------------
 
@@ -99,7 +101,7 @@ DV_LOOKUPS = {
     'minecraft:wood': DV_WOOD,
 }
 
-INTERESTING = set([
+INTERESTING: set[BlockType] = {
     'minecraft:chest',
 
     'minecraft:deepslate_diamond_ore',
@@ -119,35 +121,35 @@ INTERESTING = set([
 
     'minecraft:portal',
 
-])
+}
 
-OPTIONAL_BLOCKS = {
-    'amethyst': (
+OPTIONAL_BLOCKS: dict[BlockGroupType, set[BlockType]] = {
+    'amethyst': {
         'minecraft:amethyst_block',
         'minecraft:amethyst_cluster',
         'minecraft:budding_amethyst',
         'minecraft:small_amethyst_bud',
         'minecraft:medium_amethyst_bud',
         'minecraft:large_amethyst_bud',
-    ),
-    'books': (
+    },
+    'books': {
         'minecraft:bookshelf',
-    ),
-    'clay': (
+    },
+    'clay': {
         'minecraft:clay',
         'minecraft:hardened_clay',
         'minecraft:stained_hardened_clay',
-    ),
-    'coal': (
+    },
+    'coal': {
         'minecraft:coal_ore',
         'minecraft:deepslate_coal_ore',
-    ),
-    'copper': (
+    },
+    'copper': {
         'minecraft:copper_ore',
         'minecraft:deepslate_copper_ore',
         'minecraft:raw_copper_block',
-    ),
-    'deep': (
+    },
+    'deep': {
         'minecraft:chiseled_deepslate',
         'minecraft:cracked_deepslate_bricks',
         'minecraft:cracked_deepslate_tiles',
@@ -171,22 +173,22 @@ OPTIONAL_BLOCKS = {
         'minecraft:sculk_vein',
         'minecraft:soul_fire',
         'minecraft:soul_lantern',
-    ),
-    'iron': (
+    },
+    'iron': {
         'minecraft:deepslate_iron_ore',
         'minecraft:iron_ore',
-    ),
+    },
     'kelp': 'minecraft:kelp',
     'lava': 'minecraft:lava',
     'magma': 'minecraft:magma',
     'obsidian': 'minecraft:obsidian',
-    'redstone': (
+    'redstone': {
         'minecraft:deepslate_redstone_ore',
         'minecraft:redstone_ore',
-    ),
-    'treasure': (
-    ),
-    'village': (
+    },
+    'treasure': {
+    },
+    'village': {
         # this stuff you only care about if it's under the ground
         'minecraft:acacia_door',
         'minecraft:acacia_stairs',
@@ -214,10 +216,10 @@ OPTIONAL_BLOCKS = {
         'minecraft:spruce_fence_gate',
         'minecraft:stonecutter_block',
         'minecraft:wooden_door',
-    ),
+    },
 }
 
-IGNORE = set([
+IGNORE: set[BlockType] = {
     'minecraft:air',
     'minecraft:bamboo',
     'minecraft:bedrock',
@@ -325,7 +327,7 @@ IGNORE = set([
 
     # nether
     'minecraft:soul_sand',
-])
+}
 
 def init_logger(log_level: int) -> logging.Logger:
     levels = {
@@ -339,13 +341,21 @@ def init_logger(log_level: int) -> logging.Logger:
     return logger
 
 
-def scan(center, x_range, y_range, z_range, max_dist, world_path, optional_blocks_chosen):
+def scan(
+    center: int,
+    x_range: int,
+    y_range: int,
+    z_range: int,
+    max_dist: int,
+    world_path: Path,
+    optional_blocks_chosen: dict[BlockGroupType, bool]
+):
     center_x, center_y, center_z = center
     x_min, x_max = x_range
     y_min, y_max = y_range
     z_min, z_max = z_range
-    found_grouped: Dict[Block, Dict[Coords, int]] = defaultdict(lambda: defaultdict(lambda: 0))
-    found_with_dist = defaultdict(list)
+    found_grouped: dict[BlockType, dict[Coords, int]] = defaultdict(lambda: defaultdict(lambda: 0))
+    found_with_dist: dict[BlockType, list[DistCoords]] = defaultdict(list)
 
     interesting_blocks = INTERESTING.copy()
     ignore_blocks = IGNORE.copy()
@@ -359,7 +369,7 @@ def scan(center, x_range, y_range, z_range, max_dist, world_path, optional_block
             else:
                 ignore_blocks.add(block)
 
-    def get_dist(x,y,z, metric='MANHATTAN_ADJUSTED'):
+    def get_dist(x: int, y: int, z: int, metric='MANHATTAN_ADJUSTED') -> float:
         dx = x - center_x
         dy = y - center_y
         dz = z - center_z
@@ -377,7 +387,7 @@ def scan(center, x_range, y_range, z_range, max_dist, world_path, optional_block
 
         raise Exception(f'Unknown distance metric {metric}')
 
-    def add_interesting(x, y, z, name, dv):
+    def add_interesting(x: int, y: int, z: int, name: BlockType, dv: str):
         if name.startswith('minecraft:deepslate_'):
             name = name[:len('minecraft:')] + name[len('minecraft:deepslate_'):]
         found_with_dist[name].append((get_dist(x, y, z), x, y, z))
@@ -475,7 +485,10 @@ def scan(center, x_range, y_range, z_range, max_dist, world_path, optional_block
 
     return found_grouped, found_with_dist
 
-def show_interesting_text(found_grouped, found_with_dist):
+def show_interesting_text(
+    found_grouped: dict[BlockType, dict[Coords, int]],
+    found_with_dist: dict[BlockType, list[DistCoords]],
+):
     for name in sorted(found_with_dist.keys()):
         total = len(found_with_dist[name])
         print('------------------------------------------------------------------------')
@@ -483,7 +496,10 @@ def show_interesting_text(found_grouped, found_with_dist):
         for dist, x, y, z in sorted(found_with_dist[name]):
             print(name, f'{dist:6} ({x:4} {y:4} {z:4})')
 
-def show_interesting_text_closest(found_grouped, found_with_dist):
+def show_interesting_text_closest(
+    found_grouped: dict[BlockType, dict[Coords, int]],
+    found_with_dist: dict[BlockType, list[DistCoords]],
+):
     merged_list = []
     for name in sorted(found_with_dist.keys()):
         merged_list += [ (dist, name, x, y, z) for dist, x, y, z in found_with_dist[name] ]
@@ -496,7 +512,10 @@ def show_interesting_text_closest(found_grouped, found_with_dist):
         print(name, dist, '(', x, y, z, ')')
 
 
-def show_interesting_json(found_grouped, found_with_dist):
+def show_interesting_json(
+    found_grouped: dict[BlockType, dict[Coords, int]],
+    found_with_dist: dict[BlockType, list[DistCoords]],
+):
     data = {}
     for block_name, coords_count in found_grouped.items():
         if block_name not in data:
@@ -516,7 +535,7 @@ def parse():
     parser.add_argument('--ymin', type=int, default=None)
     parser.add_argument('--ymax', type=int, default=None)
     parser.add_argument('--dist', type=int, default=DEFAULT_MAX_DIST)
-    parser.add_argument('--world', type=str, default=DEFAULT_WORLD_PATH)
+    parser.add_argument('--world', type=Path, default=DEFAULT_WORLD_PATH)
     parser.add_argument('--verbose', '-v', action='count', default=0, dest='log_level')
     parser.add_argument('--json', action='store_const', default='text', const='json', dest='format')
     parser.add_argument('--closest', action='store_const', default='text', const='text_closest', dest='format')
