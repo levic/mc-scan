@@ -344,6 +344,7 @@ def init_logger(log_level: int) -> logging.Logger:
 
 
 def scan(
+    dimension: int,
     center: int,
     x_range: int,
     y_range: int,
@@ -449,7 +450,7 @@ def scan(
 #                seen.add((x,z))
                 for y in range(y_min, y_max+1):
 #                    logger.debug(f'        {x:4}, {y:4}, {z:4}')
-                    block = world.getBlock(x, y, z)
+                    block = world.getBlock(x, y, z, dimension=dimension)
 
                     if block is None:
                         #print(f'  block {block}')
@@ -548,6 +549,8 @@ def parse():
     parser.add_argument('--south', action='store_true')
     parser.add_argument('--east', action='store_true')
     parser.add_argument('--west', action='store_true')
+    parser.add_argument('--nether', action='store_const', const=1, dest='dimension', default=0)
+    parser.add_argument('--theend', action='store_const', const=2, dest='dimension')
     for opt in OPTIONAL_BLOCKS:
         parser.add_argument(f'--{opt}', default=False, action='store_true')
 
@@ -617,13 +620,14 @@ def run():
        )
 
     found_grouped, found_with_dist = scan(
-        (opts.center_x, opts.center_y, opts.center_z),
-        (x_min, x_max),
-        (opts.ymin, opts.ymax),
-        (z_min, z_max),
-        opts.dist,
-        opts.world,
-        { key: getattr(opts, key) for key in OPTIONAL_BLOCKS },
+        dimension=opts.dimension,
+        center=(opts.center_x, opts.center_y, opts.center_z),
+        x_range=(x_min, x_max),
+        y_range=(opts.ymin, opts.ymax),
+        z_range=(z_min, z_max),
+        max_dist=opts.dist,
+        world_path=opts.world,
+        optional_blocks_chosen={ key: getattr(opts, key) for key in OPTIONAL_BLOCKS },
     )
     show_fns = {
         'text': show_interesting_text,
