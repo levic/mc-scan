@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 from collections import defaultdict
+from datetime import datetime
 import dotenv
 import functools
+import humanize
 import itertools
 import json
 import logging
@@ -579,10 +581,29 @@ def parse():
 
     return opts
 
+def show_age(world_path: Path):
+    # reading the dir is not good because the act of opening the file
+    # sets a new modified timestamp
+    #world_db = Path(world_path, 'db')
+    #now = datetime.now()
+    #smallest_delta = None
+    #for f in world_db.iterdir():
+    #    if not f.is_file():
+    #        continue
+    #    t = datetime.fromtimestamp(f.stat().st_mtime)
+    #    delta = now - t
+    #    smallest_delta = delta if smallest_delta is None else min(smallest_delta, delta)
+
+    smallest_delta = datetime.now() - datetime.fromtimestamp((world_path / 'last_updated').stat().st_mtime)
+    print('Last updated:', humanize.precisedelta(smallest_delta))
+    
+
 def run():
     opts = parse()
     global logger
     logger = init_logger(opts.log_level)
+
+    show_age(Path(opts.world))
 
     x_min = opts.center_x - (opts.dist if not opts.east else 0)
     x_max = opts.center_x + (opts.dist if not opts.west else 0)

@@ -15,14 +15,22 @@ tmpdir="/run/user/$UID/mc-worlds"
 if ! [[ -e $tmpdir ]]  ; then
 	mkdir -p "$tmpdir"
 fi
+
 if ! [[ -e worlds ]] ; then
 	ln -s "$tmpdir" worlds
 fi
 
-#rm -rf worlds/*
+if [[ -e worlds ]] && [[ ! -l worlds ]]; then
+  echo "expected worlds dir to be a symlink" >&2
+  exit 1
+fi
+
+rm -rf "worlds/$level_name"
 cp -pr "$source_worlds/$level_name" worlds/
-ls -l  -t --time-style=full-iso "worlds/$level_name/db" | head -n 2 | tail -n 1
-#ls -l worlds/"$name"/db/LOCK
+
+newest_file=$( ls -1 -t  "worlds/$level_name/db" | head -n 2 | tail -n 1 )
+touch -r "$source_worlds/$level_name/db/$newest_file" "worlds/$level_name/last_updated"
+#cp -rp "$source_worlds/$level_name/db/$newest_file" "worlds/$level_name/last_updated"
+#cat /dev/null > "worlds/$level_name/last_updated"
 
 ./scan.py "$@" --world "worlds/$level_name"
-

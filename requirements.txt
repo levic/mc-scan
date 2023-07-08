@@ -1,2 +1,3 @@
+humanize
 numpy
 python-dotenv
