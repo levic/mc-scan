@@ -11,6 +11,10 @@ from pathlib import Path
 import sys
 from typing import Tuple
 
+bedrock_path = Path(__file__).parent.parent / "bedrock"
+if not bedrock_path.exists() or not bedrock_path.is_dir():
+    raise RuntimeError(f'bedrock library not found at {bedrock_path}')
+sys.path[1:1] = [str(bedrock_path)]
 import bedrock.leveldb
 
 # timings for potential future json output
