@@ -551,6 +551,8 @@ def parse():
     parser.add_argument('--west', action='store_true')
     parser.add_argument('--nether', action='store_const', const=1, dest='dimension', default=0)
     parser.add_argument('--theend', action='store_const', const=2, dest='dimension')
+    parser.add_argument('--debug', type=str, default=None)
+
     for opt in OPTIONAL_BLOCKS:
         parser.add_argument(f'--{opt}', default=False, action='store_true')
 
@@ -605,6 +607,20 @@ def run():
     opts = parse()
     global logger
     logger = init_logger(opts.log_level)
+
+    if opts.debug:
+        if len(opts.debug.split(':') < 2):
+            opts.debug += ':58400'
+
+        debug_host, debug_port = opts.debug.split(':')
+
+        import pydevd_pycharm
+        pydevd_pycharm.settrace(
+            debug_host,
+            port=debug_port,
+            stdoutToServer=True,
+            stderrToServer=True
+        )
 
     show_age(Path(opts.world))
 

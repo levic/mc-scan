@@ -1,3 +1,5 @@
 humanize
 numpy
 python-dotenv
+
+pydevd-pycharm~=231.8109.197
