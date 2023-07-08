@@ -6,7 +6,7 @@
 git submodule update --init --recursive
 
 # create virtualenv
-[[ -e venv ]] || python3.10 -m venv venv
+[[ -e venv ]] || python3.11 -m venv venv
 source venv/bin/activate
 
 pip install -r requirements.txt
